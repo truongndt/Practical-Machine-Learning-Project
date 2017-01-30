@@ -1,0 +1,92 @@
+---
+title: "Machine Learning Course - Week 4 Project"
+author: "Thao-Truong Nguyen"
+date: "January 29, 2017"
+output: html_document
+---
+## Summary
+***
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
+
+In this project, we will use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.
+
+More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+## Library
+***
+```{r Load Library, message=FALSE, warning=FALSE}
+library(caret)
+library(randomForest)
+set.seed(12345)
+```
+
+## Get data
+***
+```{r dataset}
+# Set data URL
+TrainURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+TestURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+# Download data
+if (!file.exists("pml-training.csv")) {
+  download.file(url = TrainURL, destfile = "pml-training.csv")
+} 
+if (!file.exists("pml-testing.csv")) {
+  download.file(url = TestURL, destfile = "pml-testing.csv")
+} 
+
+# Load data
+training <- read.csv("pml-training.csv")
+testing <- read.csv("pml-testing.csv")
+```
+
+## Data Cleaning
+***
+```{r lean data}
+# Remove variables with Nearly Zero Variance
+NZV <- nearZeroVar(training)
+training <- training[, -NZV]
+
+# Remove variables contain almost NA
+AllNA    <- sapply(training, function(x) mean(is.na(x))) > 0.95
+training <- training[, AllNA==FALSE]
+
+# Remove first 5 variables, which are identity and time stamp columns
+training <- training[, -(1:5)]
+
+# Use 70% of training dataset for train model and 30% for test model
+inTrain  <- createDataPartition(training$classe, p=0.7, list=FALSE)
+TrainSet <- training[inTrain, ]
+TestSet  <- training[-inTrain, ]
+```
+
+## Build model
+***
+Use Random Forest to build the prediction model:
+```{r Random Forest}
+# build prediction model
+controlRF <- trainControl(method="cv", number=3, verboseIter=FALSE)
+modfitRF <- train(classe ~ ., data=TrainSet, method="rf", trControl=controlRF)
+modfitRF$finalModel
+
+# prediction on Test dataset
+predictRF <- predict(modfitRF, TestSet)
+confMatRF <- confusionMatrix(predictRF, TestSet$classe)
+confMatRF
+```
+The accuracy is 99.68% (>99%) and predicted accuracy for the out-of-sample error is 0.28%, So Random Forests alogorithm can be used to predict the test set.
+
+## Predict Test-set
+***
+Use Random Forest model to predict the 20 quiz results (testing dataset)
+```{r Predict TEST}
+result <- predict(modfitRF,testing)
+result
+```
+
+Export result data to text file
+```{r Export result}
+quiz <- c(1:20)
+predictTEST <- data.frame(quiz, result)
+write.table(predictTEST, "result.txt", quote = FALSE, row.names = FALSE)
+```
