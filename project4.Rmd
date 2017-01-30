@@ -1,11 +1,10 @@
 ---
-title: "Machine Learning Course - Week 4 Project"
+title: "Practical Machine Learning Course - Week 4 Project"
 author: "Thao-Truong Nguyen"
 date: "January 29, 2017"
 output: html_document
 ---
 ## Summary
-***
 Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
 
 In this project, we will use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.
@@ -13,7 +12,6 @@ In this project, we will use data from accelerometers on the belt, forearm, arm,
 More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
 
 ## Library
-***
 ```{r Load Library, message=FALSE, warning=FALSE}
 library(caret)
 library(randomForest)
@@ -21,7 +19,6 @@ set.seed(12345)
 ```
 
 ## Get data
-***
 ```{r dataset}
 # Set data URL
 TrainURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
@@ -41,8 +38,7 @@ testing <- read.csv("pml-testing.csv")
 ```
 
 ## Data Cleaning
-***
-```{r lean data}
+```{r clean data}
 # Remove variables with Nearly Zero Variance
 NZV <- nearZeroVar(training)
 training <- training[, -NZV]
@@ -61,9 +57,8 @@ TestSet  <- training[-inTrain, ]
 ```
 
 ## Build model
-***
 Use Random Forest to build the prediction model:
-```{r Random Forest}
+```{r Random Forest, echo=TRUE}
 # build prediction model
 controlRF <- trainControl(method="cv", number=3, verboseIter=FALSE)
 modfitRF <- train(classe ~ ., data=TrainSet, method="rf", trControl=controlRF)
@@ -74,18 +69,17 @@ predictRF <- predict(modfitRF, TestSet)
 confMatRF <- confusionMatrix(predictRF, TestSet$classe)
 confMatRF
 ```
-The accuracy is 99.68% (>99%) and predicted accuracy for the out-of-sample error is 0.28%, So Random Forests alogorithm can be used to predict the test set.
+Random Forests alogorithm can be used to predict the test set as the accuracy is 99.68% (>99%) and predicted accuracy for the out-of-sample error is 0.28%.
 
 ## Predict Test-set
-***
 Use Random Forest model to predict the 20 quiz results (testing dataset)
-```{r Predict TEST}
+```{r Predict TEST, echo=TRUE}
 result <- predict(modfitRF,testing)
 result
 ```
 
 Export result data to text file
-```{r Export result}
+```{r Export result, echo=TRUE}
 quiz <- c(1:20)
 predictTEST <- data.frame(quiz, result)
 write.table(predictTEST, "result.txt", quote = FALSE, row.names = FALSE)
